@@ -21,18 +21,24 @@ struct MainView: View {
                     Label("首頁", systemImage: "house.fill")
                 }
             
-            // 根據登入狀態決定是否顯示個人頁面
+            // **(修改)** 根據登入狀態顯示 MyPageView 或提示登入的頁面
             if authManager.loggedInUser != nil {
-                // TODO: 建立 MyPageView
-                Text("個人頁面")
+                MyPageView()
                     .tabItem {
                         Label("個人頁面", systemImage: "person.fill")
                     }
             } else {
-                // 未登入時，可以顯示一個提示登入的頁面
-                VStack {
-                    Text("請先登入以查看個人頁面")
-                    // 可以放一個登入按鈕在這裡
+                VStack(spacing: 16) {
+                    Image(systemName: "person.crop.circle.badge.xmark")
+                        .font(.system(size: 60))
+                        .foregroundColor(.secondary)
+                    Text("請先登入")
+                        .font(.title2)
+                    Text("登入後即可查看您的借閱紀錄與個人檔案。")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
                 }
                 .tabItem {
                     Label("個人頁面", systemImage: "person.fill")

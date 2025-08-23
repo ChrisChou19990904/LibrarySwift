@@ -19,18 +19,27 @@ class BookDetailViewModel {
     /// 視圖的當前狀態
     var viewState: ViewState = .loading
     
+    // 新增：用於顯示提示框 (Alert)
+    var showingAlert = false
+    var alertTitle = ""
+    var alertMessage = ""
+    
     enum ViewState {
         case loading
         case content
         case error(String)
     }
     
-    private let bookId: Int
+    // **(修正)** 移除 private 關鍵字，讓外部的 View 可以讀取 bookId
+    let bookId: Int
+    private let authManager: AuthenticationManager
+
     
     // MARK: - Initializer
     
-    init(bookId: Int) {
+    init(bookId: Int, authManager: AuthenticationManager) {
         self.bookId = bookId
+        self.authManager = authManager
         // ViewModel 初始化時，立即開始獲取資料
         Task {
             await fetchDetails()
@@ -49,5 +58,36 @@ class BookDetailViewModel {
             viewState = .error("無法載入書籍詳情，請稍後再試。")
             print("Error fetching book details: \(error)")
         }
+    }
+    
+    
+    /// **(新增)** 執行借閱書籍的動作
+    func borrowBook() async {
+        guard let userId = authManager.loggedInUser?.id else {
+            showAlert(title: "錯誤", message: "請先登入才能借閱書籍。")
+            return
+        }
+        
+        let request = BorrowRequest(bookId: bookId, userId: userId)
+        
+        do {
+            let response = try await APIService.shared.borrowBook(request: request)
+            if response.success {
+                showAlert(title: "借閱成功", message: "您已成功借閱《\(bookDetail?.title ?? "")》！\n書籍副本碼: \(response.borrowedBookUniqueCode ?? "N/A")")
+                // 成功後，重新整理資料以更新可借閱數量
+                await fetchDetails()
+            } else {
+                showAlert(title: "借閱失敗", message: response.message ?? "發生未知錯誤。")
+            }
+        } catch {
+            showAlert(title: "借閱失敗", message: "網路請求失敗，請稍後再試。")
+        }
+    }
+    
+    /// **(新增)** 輔助函數，用於設定提示框內容
+    private func showAlert(title: String, message: String) {
+        self.alertTitle = title
+        self.alertMessage = message
+        self.showingAlert = true
     }
 }

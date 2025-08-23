@@ -31,6 +31,11 @@ struct APIEndpoints {
         static let books = "/api/books/test/getAllBooksWithDetails"
         static let bookDetails = "/api/books/test/getBookDetailsById02" // 新增
         static let userProfile = "/api/users" // 將會拼接上 userId 和 /profile
+        
+        // Loans (新增)
+        static let loans = "/api/loans"
+        static let borrow = "/api/loans/borrow"   // 新增
+        static let `return` = "/api/loans/return" // 新增 (使用反引號避免與關鍵字衝突)
     }
     
     // MARK: - Endpoint URLs
@@ -38,9 +43,9 @@ struct APIEndpoints {
     static var login: URL { URL(string: baseURL + Paths.login)! }
     static var register: URL { URL(string: baseURL + Paths.register)! }
     /// 獲取所有書籍分類的 URL。
-    static var allCategories: URL {
-        URL(string: baseURL + Paths.categories)!
-    }
+    static var allCategories: URL { URL(string: baseURL + Paths.categories)! }
+    static var borrowBook: URL { URL(string: baseURL + Paths.borrow)! } // 新增
+    static var returnBook: URL { URL(string: baseURL + Paths.return)! } // 新增
     
     /// 獲取書籍列表的 URL。
     ///
@@ -51,19 +56,15 @@ struct APIEndpoints {
     static func books(categoryId: Int?, searchTerm: String?) -> URL {
         var components = URLComponents(string: baseURL + Paths.books)!
         var queryItems = [URLQueryItem]()
-        
         if let categoryId = categoryId {
             queryItems.append(URLQueryItem(name: "categoryId", value: String(categoryId)))
         }
-        
         if let searchTerm = searchTerm, !searchTerm.isEmpty {
             queryItems.append(URLQueryItem(name: "searchTerm", value: searchTerm))
         }
-        
         if !queryItems.isEmpty {
             components.queryItems = queryItems
         }
-        
         return components.url!
     }
     
@@ -78,5 +79,22 @@ struct APIEndpoints {
     /// - Returns: 完整的個人檔案 API URL。
     static func userProfile(userId: Int) -> URL {
         URL(string: baseURL + Paths.userProfile + "/\(userId)/profile")!
+    }
+    
+    // MARK: - Loan Endpoints (新增)
+    
+    /// 獲取當前借閱中的書籍 URL。
+    static func currentLoans(userId: Int) -> URL {
+        URL(string: baseURL + Paths.loans + "/current/\(userId)")!
+    }
+    
+    /// 獲取歷史借閱紀錄的 URL。
+    static func loanHistory(userId: Int) -> URL {
+        URL(string: baseURL + Paths.loans + "/history/\(userId)")!
+    }
+    
+    /// 獲取逾期未歸還書籍的 URL。
+    static func overdueLoans(userId: Int) -> URL {
+        URL(string: baseURL + Paths.loans + "/overdue/\(userId)")!
     }
 }

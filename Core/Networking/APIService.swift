@@ -5,6 +5,8 @@
 //  Created by 訪客使用者 on 2025/8/23.
 //
 // 核心的 APIService.swift。這個檔案是 App 的網路引擎，負責發送請求、接收 JSON 並將其轉換為我們之前定義好的 Swift Models。
+//
+// AuthService 的功能合併到 APIService 中，讓 APIService 成為 App 唯一的網路請求中心，同時新增借閱與歸還的功能。
 
 import Foundation
 
@@ -13,7 +15,8 @@ enum APIServiceError: Error {
     case invalidURL
     case networkError(Error)
     case decodingError(Error)
-    case serverError(statusCode: Int)
+    // **(修正)** 在 serverError case 中加入 message 參數，使其與呼叫時的格式一致。
+    case serverError(statusCode: Int, message: String?)
     case unknownError
 }
 
@@ -24,12 +27,40 @@ class APIService {
     
     /// 提供一個共享的單例實例，確保整個 App 共用同一個網路服務。
     static let shared = APIService()
-    
+        
+    // **(修正)** 使用閉包直接初始化 let 常數，確保只被賦值一次。
+    // 這種寫法既符合 let 的規則，又能包含多行設定邏輯。
     /// JSON 解碼器，用於將 API 回應的資料轉換為 Swift 物件。
-    private let decoder = JSONDecoder()
+    private let decoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        //decoder.dateDecodingStrategy = .iso8601
+        // 舊的 .iso8601 策略過於嚴格，我們改用自訂的 DateFormatter 來確保能正確解析 API 回傳的日期格式。
+        let formatter = DateFormatter()
+        // 設定與您 API 回應完全匹配的日期格式
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        // 使用 POSIX 地區設定，避免使用者手機的地區設定影響日期解析
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        // 指定時區為 UTC
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        
+        decoder.dateDecodingStrategy = .formatted(formatter)
+        return decoder
+    }()
     
-    /// 私有化初始化方法，確保外部無法創建此類別的新實例。
+    private let encoder = JSONEncoder()
+    
+    // 初始化方法現在變為空
     private init() {}
+    
+    // MARK: - Auth APIs (從 AuthService 合併過來)
+    
+    func login(request: LoginRequest) async throws -> LoginResponse {
+        return try await postData(url: APIEndpoints.login, body: request)
+    }
+    
+    func register(request: RegistrationRequest) async throws -> RegistrationResponse {
+        return try await postData(url: APIEndpoints.register, body: request)
+    }
     
     // MARK: - Public API Methods
     
@@ -69,6 +100,33 @@ class APIService {
         return try await fetchData(from: url)
     }
     
+    // MARK: - Loan APIs (新增)
+    
+    func fetchCurrentLoans(userId: Int) async throws -> [Loan] {
+        let url = APIEndpoints.currentLoans(userId: userId)
+        return try await fetchData(from: url)
+    }
+    
+    func fetchLoanHistory(userId: Int) async throws -> [Loan] {
+        let url = APIEndpoints.loanHistory(userId: userId)
+        return try await fetchData(from: url)
+    }
+    
+    func fetchOverdueLoans(userId: Int) async throws -> [Loan] {
+        let url = APIEndpoints.overdueLoans(userId: userId)
+        return try await fetchData(from: url)
+    }
+    
+    // MARK: - Loan Action APIs (新增)
+    
+    func borrowBook(request: BorrowRequest) async throws -> BorrowResponse {
+        return try await postData(url: APIEndpoints.borrowBook, body: request)
+    }
+    
+    func returnBook(request: ReturnRequest) async throws -> ReturnResponse {
+        return try await postData(url: APIEndpoints.returnBook, body: request)
+    }
+    
     // MARK: - Generic Fetch Logic
     
     /// 一個通用的異步函數，用於從指定的 URL 獲取並解碼資料。
@@ -84,7 +142,8 @@ class APIService {
             // 2. 檢查 HTTP 回應狀態碼
             guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                throw APIServiceError.serverError(statusCode: statusCode)
+                let errorMessage = String(data: data, encoding: .utf8)
+                throw APIServiceError.serverError(statusCode: statusCode, message: errorMessage)
             }
             
             // 3. 嘗試將回傳的 data 解碼為指定的泛型 T
@@ -96,6 +155,39 @@ class APIService {
         } catch {
             // 處理其他網路錯誤
             throw APIServiceError.networkError(error)
+        }
+    }
+    
+    /// 通用的 POST 請求方法
+    private func postData<T: Codable, U: Codable>(url: URL, body: T) async throws -> U {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // 自動附加 JWT
+        if let token = TokenManager.shared.getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = try encoder.encode(body)
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIServiceError.unknownError
+            }
+            
+            guard (200...299).contains(httpResponse.statusCode) else {
+                // 嘗試解析後端回傳的錯誤訊息
+                let errorMessage = String(data: data, encoding: .utf8)
+                throw APIServiceError.serverError(statusCode: httpResponse.statusCode, message: errorMessage)
+            }
+            
+            return try decoder.decode(U.self, from: data)
+            
+        } catch let error as DecodingError {
+            throw APIServiceError.decodingError(error)
+        } catch {
+            throw error // 重新拋出已知的 APIServiceError 或其他網路錯誤
         }
     }
 }

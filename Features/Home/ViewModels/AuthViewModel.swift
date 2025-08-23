@@ -33,7 +33,9 @@ class AuthViewModel {
         let request = LoginRequest(account: account, password: password)
         
         do {
-            let response = try await AuthService.shared.login(request: request)
+            //let response = try await AuthService.shared.login(request: request)
+            // **(修改)** 改為呼叫 APIService
+            let response = try await APIService.shared.login(request: request)
             authManager.login(response: response)
             isLoading = false
             return true // 登入成功
