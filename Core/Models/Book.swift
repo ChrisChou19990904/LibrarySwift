@@ -45,5 +45,8 @@ struct Book: Codable, Identifiable {
     // 注意：
     // 因為 Swift 的屬性名稱 (例如 `publishYear`) 與 JSON 中的鍵 (key) 完全相同，
     // `Codable` 協議可以自動完成所有對應，我們不需要撰寫任何額外的解析程式碼。
+    
+    let imageUrl: String? // **(新增)** 書籍封面的圖片 URL (可選)
+
 }
 

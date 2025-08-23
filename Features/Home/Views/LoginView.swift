@@ -71,9 +71,11 @@ struct LoginView: View {
                 .cornerRadius(10)
                 .disabled(viewModel.isLoading)
                 
-                // TODO: 加入註冊按鈕
-                Text("還沒有帳號？加入會員")
-                    .foregroundColor(.indigo)
+                // **(修改)** 將文字改為 NavigationLink
+                NavigationLink(destination: RegisterView()) {
+                    Text("還沒有帳號？加入會員")
+                        .foregroundColor(.indigo)
+                }
                 
                 Spacer()
             }

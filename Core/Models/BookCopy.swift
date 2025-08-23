@@ -21,4 +21,7 @@ struct BookCopy: Codable, Identifiable, Hashable {
     
     /// 副本的當前狀態描述 (例如："可借閱", "已借出")。
     let statusDescription: String
+    
+    let imageUrl: String? // **(新增)** 書籍封面的圖片 URL (可選)
+
 }

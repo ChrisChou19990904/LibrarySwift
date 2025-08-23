@@ -18,88 +18,102 @@ struct HomeView: View {
 
     /// 控制登入 sheet 是否顯示
     @State private var isShowingLoginSheet = false
+    @State private var isMenuPresented = false // **(新增)** 控制滑出選單的狀態
+
     
     var body: some View {
         NavigationStack {
-            // 根據 ViewModel 的狀態顯示不同的 UI
-            switch viewModel.viewState {
-            case .loading:
-                ProgressView("載入中...")
-                    .scaleEffect(1.5)
-                    .navigationTitle("日比野線上圖書館")
+            // **(修改)** 使用 ZStack 來疊加主內容和滑出選單
+            ZStack(alignment: .leading) {
+                // 主內容區域
+                mainContent
                 
-            case .error(let errorMessage):
-                VStack(spacing: 20) {
-                    Image(systemName: "wifi.exclamationmark")
-                        .font(.system(size: 50))
-                        .foregroundColor(.red)
-                    Text("載入失敗")
-                        .font(.title)
-                    Text(errorMessage)
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal)
-                    Button("重試") {
-                        Task {
-                            await viewModel.initialLoad()
+                // 滑出選單
+                if isMenuPresented {
+                    // 半透明背景，點擊可關閉選單
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation(.easeInOut) {
+                                isMenuPresented = false
+                            }
+                        }
+                    
+                    // 分類列表選單
+                    CategoryListView(
+                        categories: viewModel.categories,
+                        selectedCategoryId: $viewModel.selectedCategoryId
+                    )
+                    .frame(width: 250)
+                    .background(Color(.systemBackground)) // 適應深淺色模式的背景
+                    .transition(.move(edge: .leading)) // 從左側滑入的動畫
+                    .onDisappear {
+                        // 當選單關閉時，確保 isMenuPresented 狀態正確
+                        if isMenuPresented {
+                            isMenuPresented = false
                         }
                     }
-                    .buttonStyle(.borderedProminent)
                 }
-                .navigationTitle("錯誤")
+            }
+            .navigationBarTitleDisplayMode(.inline) // 設定為 inline 以便自訂標題
+            .toolbar {
+                // **(修改)** 自訂頂部工具列
+                ToolbarItem(placement: .navigationBarLeading) {
+                    menuButton
+                }
                 
-            case .content:
-                mainContentView
-                    .navigationTitle("日比野線上圖書館")
-                    .toolbar {
-                        // **(新增)** 頂部工具欄按鈕
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            toolbarButton
-                        }
-                    }
+                ToolbarItem(placement: .principal) {
+                    titleAndLoginButton
+                }
             }
         }
-        // 使用 .searchable 修飾符來添加原生搜尋欄
         .searchable(text: $viewModel.searchTerm, prompt: "尋找書籍")
         .onSubmit(of: .search) {
-            // 當使用者在鍵盤上按下搜尋時觸發
             viewModel.performSearch()
         }
-        // **(新增)** 登入畫面的 sheet
         .sheet(isPresented: $isShowingLoginSheet) {
             LoginView()
-                // 將 authManager 傳遞給 sheet 環境
                 .environment(authManager)
         }
     }
     
-    /// 主內容視圖，包含分類和書籍列表
-    private var mainContentView: some View {
-        // 使用 HStack 創建左右分欄佈局，類似網頁的 Flexbox
-        HStack(alignment: .top, spacing: 0) {
-            // 左側：分類列表
-            CategoryListView(
-                categories: viewModel.categories,
-                selectedCategoryId: $viewModel.selectedCategoryId
-            )
-            .frame(width: 200) // 給予一個固定寬度
-            
-            Divider()
-            
-            // 右側：書籍列表
+
+    /// 主要內容視圖 (書籍網格)
+    @ViewBuilder
+    private var mainContent: some View {
+        switch viewModel.viewState {
+        case .loading:
+            ProgressView("載入中...")
+        case .error(let errorMessage):
+            Text(errorMessage)
+        case .content:
             BookGridView(books: viewModel.books)
         }
     }
     
-    /// **(新增)** 根據登入狀態顯示不同的工具欄按鈕
-        @ViewBuilder
-        private var toolbarButton: some View {
+    /// 左上角的選單按鈕
+    private var menuButton: some View {
+        Button {
+            withAnimation(.easeInOut) {
+                isMenuPresented.toggle()
+            }
+        } label: {
+            Image(systemName: "line.3.horizontal")
+        }
+    }
+    
+    /// 中間的標題和右側的登入/登出按鈕
+    private var titleAndLoginButton: some View {
+        HStack {
+            Text("日比野線上圖書館")
+                .font(.headline)
+            
+            Spacer()
+            
             if authManager.loggedInUser != nil {
                 // 已登入：顯示使用者名稱和登出按鈕
                 Menu {
-                    Button("登出", role: .destructive) {
-                        authManager.logout()
-                    }
+                    Button("登出", role: .destructive) { authManager.logout() }
                 } label: {
                     HStack {
                         Text(authManager.loggedInUser?.name ?? "使用者")
@@ -108,11 +122,11 @@ struct HomeView: View {
                 }
             } else {
                 // 未登入：顯示登入按鈕
-                Button("登入") {
-                    isShowingLoginSheet = true
-                }
+                Button("登入") { isShowingLoginSheet = true }
             }
         }
+    }
+    
 }
 
 // MARK: - Subviews (將 UI 拆分為更小的元件，方便管理)
@@ -172,12 +186,23 @@ struct BookCardView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // 圖片預留區
+            // **(修改)** 使用我們新的 AsyncImageView
+            AsyncImageView(urlString: book.imageUrl)
+                .frame(height: 180)
+                .frame(maxWidth: .infinity)
+                .background(Color(.systemGray5))
+                .clipped()
+            
             // 頂部資訊：書名和作者
             VStack(alignment: .leading) {
                 Text(book.title)
                     .font(.headline)
                     .lineLimit(2)
                 Text(book.author)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                Text(book.publisher)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }

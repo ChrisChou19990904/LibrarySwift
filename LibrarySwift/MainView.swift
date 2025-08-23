@@ -42,6 +42,11 @@ struct MainView: View {
                 }
                 .tabItem {
                     Label("個人頁面", systemImage: "person.fill")
+                    // **(修改)** 將文字改為 NavigationLink
+                    NavigationLink(destination: RegisterView()) {
+                        Text("還沒有帳號？加入會員")
+                            .foregroundColor(.indigo)
+                    }
                 }
             }
         }
