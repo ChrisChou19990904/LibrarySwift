@@ -19,63 +19,86 @@ struct HomeView: View {
     /// 控制登入 sheet 是否顯示
     @State private var isShowingLoginSheet = false
     @State private var isMenuPresented = false // **(新增)** 控制滑出選單的狀態
+    @State private var isSearchPresented = false // **(新增)** 控制搜尋框的顯示狀態
 
     
     var body: some View {
-        NavigationStack {
-            // **(修改)** 使用 ZStack 來疊加主內容和滑出選單
-            ZStack(alignment: .leading) {
-                // 主內容區域
-                mainContent
-                
-                // 滑出選單
-                if isMenuPresented {
-                    // 半透明背景，點擊可關閉選單
-                    Color.black.opacity(0.4)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            withAnimation(.easeInOut) {
-                                isMenuPresented = false
-                            }
+            NavigationStack {
+                VStack(spacing: 0) {
+                    // **(新增)** 條件式顯示的搜尋框
+                    if isSearchPresented {
+                        SearchBarView(searchTerm: $viewModel.searchTerm) {
+                            viewModel.performSearch()
                         }
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
+                    }
                     
-                    // 分類列表選單
-                    CategoryListView(
-                        categories: viewModel.categories,
-                        selectedCategoryId: $viewModel.selectedCategoryId
-                    )
-                    .frame(width: 250)
-                    .background(Color(.systemBackground)) // 適應深淺色模式的背景
-                    .transition(.move(edge: .leading)) // 從左側滑入的動畫
-                    .onDisappear {
-                        // 當選單關閉時，確保 isMenuPresented 狀態正確
+                    // **(修改)** 使用 ZStack 來疊加主內容和滑出選單
+                    ZStack(alignment: .leading) {
+                        // 主內容區域
+                        mainContent
+                        
+                        // 滑出選單
                         if isMenuPresented {
-                            isMenuPresented = false
+                            Group{
+                                // 半透明背景，點擊可關閉選單
+                                Color.black.opacity(0.4)
+                                    .ignoresSafeArea()
+                                    .onTapGesture {
+                                        withAnimation(.easeInOut) {
+                                            isMenuPresented = false
+                                        }
+                                    }
+                                
+                                // 分類列表選單
+                                CategoryListView(
+                                    categories: viewModel.categories,
+                                    selectedCategoryId: $viewModel.selectedCategoryId,
+                                    onCategorySelected: {
+                                        // 當使用者選擇一個分類後，自動關閉選單
+                                        withAnimation(.easeInOut) {
+                                            isMenuPresented = false
+                                        }
+                                    }
+                                )
+                                .frame(width: 140)
+                                .background(Color(.systemBackground)) // 適應深淺色模式的背景
+                                .transition(.move(edge: .leading)) // 從左側滑入的動畫
+                                .onDisappear {
+                                    // 當選單關閉時，確保 isMenuPresented 狀態正確
+                                    if isMenuPresented {
+                                        isMenuPresented = false
+                                    }
+                                }
+                            }
+                            // **(修正)** 為選單的容器加上 zIndex，確保它總是在最上層
+                            .zIndex(1)
                         }
                     }
                 }
-            }
-            .navigationBarTitleDisplayMode(.inline) // 設定為 inline 以便自訂標題
-            .toolbar {
-                // **(修改)** 自訂頂部工具列
-                ToolbarItem(placement: .navigationBarLeading) {
-                    menuButton
+                .navigationBarTitleDisplayMode(.inline) // 設定為 inline 以便自訂標題
+                .toolbar {
+                    // 自訂頂部工具列
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        menuButton
+                    }
+                    
+                    ToolbarItem(placement: .principal) {
+                        titleText
+                    }
+                    
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        trailingButtons
+                    }
                 }
-                
-                ToolbarItem(placement: .principal) {
-                    titleAndLoginButton
-                }
+            }
+            // **(移除)** .searchable 修飾符，改為手動控制
+            .sheet(isPresented: $isShowingLoginSheet) {
+                LoginView()
+                    .environment(authManager)
             }
         }
-        .searchable(text: $viewModel.searchTerm, prompt: "尋找書籍")
-        .onSubmit(of: .search) {
-            viewModel.performSearch()
-        }
-        .sheet(isPresented: $isShowingLoginSheet) {
-            LoginView()
-                .environment(authManager)
-        }
-    }
     
 
     /// 主要內容視圖 (書籍網格)
@@ -102,26 +125,30 @@ struct HomeView: View {
         }
     }
     
-    /// 中間的標題和右側的登入/登出按鈕
-    private var titleAndLoginButton: some View {
+    /// 中間的標題
+    private var titleText: some View {
+        Text("日比野線上圖書館")
+            .font(.headline)
+    }
+    
+    /// 右側的按鈕集合 (搜尋 + 登入/登出)
+    private var trailingButtons: some View {
         HStack {
-            Text("日比野線上圖書館")
-                .font(.headline)
-            
-            Spacer()
+            Button {
+                withAnimation(.easeInOut) {
+                    isSearchPresented.toggle()
+                }
+            } label: {
+                Image(systemName: "magnifyingglass")
+            }
             
             if authManager.loggedInUser != nil {
-                // 已登入：顯示使用者名稱和登出按鈕
                 Menu {
                     Button("登出", role: .destructive) { authManager.logout() }
                 } label: {
-                    HStack {
-                        Text(authManager.loggedInUser?.name ?? "使用者")
-                        Image(systemName: "person.circle.fill")
-                    }
+                    Image(systemName: "person.circle.fill")
                 }
             } else {
-                // 未登入：顯示登入按鈕
                 Button("登入") { isShowingLoginSheet = true }
             }
         }
@@ -131,53 +158,98 @@ struct HomeView: View {
 
 // MARK: - Subviews (將 UI 拆分為更小的元件，方便管理)
 
-/// 左側的分類列表
-struct CategoryListView: View {
-    let categories: [Category]
-    @Binding var selectedCategoryId: Int?
+/// **(新增)** 獨立的搜尋框元件
+struct SearchBarView: View {
+    @Binding var searchTerm: String
+    var onSearch: () -> Void
     
     var body: some View {
-        // 使用 List 來呈現，並綁定選擇的項目
-        List(selection: $selectedCategoryId) {
-            // "所有書籍" 選項
-            Text("所有書籍").tag(Int?.none)
+        HStack {
+            TextField("尋找書籍...", text: $searchTerm)
+                .textFieldStyle(.roundedBorder)
+                .onSubmit(onSearch) // 當按下鍵盤 return/search 時
             
-            // 從 API 獲取的分類
-            ForEach(categories) { category in
-                Text(category.title).tag(Int?.some(category.id))
-            }
+            Button("搜尋", action: onSearch)
+                .buttonStyle(.borderedProminent)
         }
-        .listStyle(.sidebar) // 使用側邊欄風格
     }
 }
 
-/// 右側的書籍網格
-struct BookGridView: View {
-    let books: [Book]
-    
-    // 定義網格佈局：自適應寬度，最小 250
-    private let columns = [ GridItem(.adaptive(minimum: 250), spacing: 16) ]
-    
+// **(修改)** 重新加入並修正 CategoryListView
+struct CategoryListView: View {
+    let categories: [Category]
+    @Binding var selectedCategoryId: Int?
+    var onCategorySelected: () -> Void
+
     var body: some View {
-            ScrollView {
-                if books.isEmpty {
-                    Text("目前沒有符合條件的書籍。")
-                        .foregroundColor(.secondary)
-                        .padding(.top, 50)
-                } else {
-                    LazyVGrid(columns: columns, spacing: 16) {
-                        ForEach(books) { book in
-                            // **(修改)** 使用 NavigationLink 包裝卡片
-                            NavigationLink(destination: BookDetailView(bookId: book.id)) {
-                                BookCardView(book: book)
-                            }
-                            .buttonStyle(.plain) // 讓 NavigationLink 不影響卡片內部按鈕的樣式
+        VStack(alignment: .leading) {
+            Text("書籍分類")
+                .font(.title2.bold())
+                .padding([.horizontal, .top])
+
+            List {
+                // "所有書籍" 按鈕
+                Button(action: {
+                    // 只有在當前選擇不是 "所有書籍" 時才更新狀態
+                    if selectedCategoryId != nil {
+                        selectedCategoryId = nil
+                    }
+                    onCategorySelected()
+                }) {
+                    HStack {
+                        Text("所有書籍")
+                            .foregroundColor(selectedCategoryId == nil ? .accentColor : .primary)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                // 其他分類按鈕
+                ForEach(categories) { category in
+                    Button(action: {
+                        if selectedCategoryId != category.id {
+                            selectedCategoryId = category.id
+                        }
+                        onCategorySelected()
+                    }) {
+                        HStack {
+                            Text(category.title)
+                                .foregroundColor(selectedCategoryId == category.id ? .accentColor : .primary)
                         }
                     }
-                    .padding()
+                    .buttonStyle(.plain)
                 }
             }
+            .listStyle(.plain)
         }
+    }
+}
+
+/// 書籍網格
+struct BookGridView: View {
+    let books: [Book]
+    // 定義網格佈局：自適應寬度，最小 160
+    private let columns = [ GridItem(.adaptive(minimum: 160), spacing: 16) ]
+    
+    var body: some View {
+        ScrollView {
+            if books.isEmpty {
+                Text("目前沒有符合條件的書籍。")
+                    .foregroundColor(.secondary)
+                    .padding(.top, 50)
+            } else {
+                LazyVGrid(columns: columns, spacing: 16) {
+                    ForEach(books) { book in
+                        // **(修改)** 使用 NavigationLink 包裝卡片
+                        NavigationLink(destination: BookDetailView(bookId: book.id)) {
+                            BookCardView(book: book)
+                        }
+                        .buttonStyle(.plain) // 讓 NavigationLink 不影響卡片內部按鈕的樣式
+                    }
+                }
+                .padding()
+            }
+        }
+    }
 }
 
 /// 單一本書的卡片視圖
@@ -185,8 +257,7 @@ struct BookCardView: View {
     let book: Book
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // 圖片預留區
+        VStack(alignment: .leading) {
             // **(修改)** 使用我們新的 AsyncImageView
             AsyncImageView(urlString: book.imageUrl)
                 .frame(height: 180)
@@ -194,24 +265,21 @@ struct BookCardView: View {
                 .background(Color(.systemGray5))
                 .clipped()
             
-            // 頂部資訊：書名和作者
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(book.title)
                     .font(.headline)
-                    .lineLimit(2)
+                // **(修改)** 加入 reservesSpace: true 參數
+                .lineLimit(2, reservesSpace: true)
                 Text(book.author)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                 Text(book.publisher)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
-            }
-            .frame(height: 70, alignment: .top) // 固定高度以對齊網格中的項目
-            
-            Spacer()
-            
-            // 底部資訊：分類和館藏狀態
-            VStack(alignment: .leading, spacing: 4) {
+                
+                Spacer()
+                
+                // 底部資訊：分類和館藏狀態
                 Text(book.category)
                     .font(.caption)
                     .padding(.horizontal, 6)
@@ -224,19 +292,9 @@ struct BookCardView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
-            // **(修改)** 移除按鈕，因為整個卡片現在都是導航連結
-            // 我們將 "查看詳情" 的視覺提示保留，但它不再是一個實際的 Button
-            Text("查看詳情")
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .background(Color.indigo)
-            .foregroundColor(.white)
-            .cornerRadius(8)
-            .padding(.top, 8)
+            .padding(/*[.horizontal, .bottom]*/6)
         }
-        .padding()
-        .background(Color(.systemGray6)) // 使用系統灰色，會自動適應深色/淺色模式
+        .background(Color(.systemGray6))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
     }

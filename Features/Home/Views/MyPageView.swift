@@ -32,11 +32,6 @@ struct MyPageView: View {
                             HStack {
                                 Text(function.rawValue)
                                     .foregroundColor(viewModel.selectedFunction == function ? .accentColor : .primary)
-                                Spacer()
-                                if viewModel.selectedFunction == function {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.accentColor)
-                                }
                             }
                         }
                     }
