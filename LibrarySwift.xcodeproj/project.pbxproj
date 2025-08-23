@@ -16,6 +16,21 @@
 			path = LibrarySwift;
 			sourceTree = "<group>";
 		};
+		ACB5DEC72E599CD000462616 /* Core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Core;
+			sourceTree = "<group>";
+		};
+		ACB5DEC82E599CE700462616 /* Features */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Features;
+			sourceTree = "<group>";
+		};
+		ACB5DEC92E599CF300462616 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +47,9 @@
 		ACB5DEAB2E59961800462616 = {
 			isa = PBXGroup;
 			children = (
+				ACB5DEC92E599CF300462616 /* Shared */,
+				ACB5DEC82E599CE700462616 /* Features */,
+				ACB5DEC72E599CD000462616 /* Core */,
 				ACB5DEB62E59961800462616 /* LibrarySwift */,
 				ACB5DEB52E59961800462616 /* Products */,
 			);
@@ -62,6 +80,9 @@
 			);
 			fileSystemSynchronizedGroups = (
 				ACB5DEB62E59961800462616 /* LibrarySwift */,
+				ACB5DEC72E599CD000462616 /* Core */,
+				ACB5DEC82E599CE700462616 /* Features */,
+				ACB5DEC92E599CF300462616 /* Shared */,
 			);
 			name = LibrarySwift;
 			packageProductDependencies = (

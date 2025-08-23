@@ -10,23 +10,16 @@ import SwiftData
 
 @main
 struct LibrarySwiftApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-
+    
+    /// 創建一個 AuthenticationManager 的實例，作為整個 App 的全局狀態。
+    @State private var authManager = AuthenticationManager()
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainView()
+                // 使用 .environment 將 authManager 注入到整個 App 的視圖層級中
+                .environment(authManager)
         }
-        .modelContainer(sharedModelContainer)
     }
 }
+
