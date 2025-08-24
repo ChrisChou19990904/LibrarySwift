@@ -35,4 +35,7 @@ struct Loan: Codable, Identifiable {
     // API 回傳的日期是 ISO8601 格式的字串 (例如 "2025-07-23T11:16:00.000+00:00")。
     // 我們需要在 APIService 的 JSONDecoder 中設定日期解碼策略，
     // 才能自動將這個字串轉換為 Swift 的 Date 物件。
+    
+    let imageUrl: String? // **(新增)** 書籍封面的圖片 URL (可選)
+
 }

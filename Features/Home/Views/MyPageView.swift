@@ -10,64 +10,48 @@ import SwiftUI
 struct MyPageView: View {
     
     @Environment(AuthenticationManager.self) private var authManager
-    @State private var viewModel: MyPageViewModel
     
-    init() {
-        // 使用一個暫時的 ViewModel 初始化，真實的會在 .onAppear 中注入
-        _viewModel = State(initialValue: MyPageViewModel(authManager: AuthenticationManager()))
-    }
+    // **(核心修改)** ViewModel 現在是一個普通的 @State 變數，從外部傳入
+    // 它不再負責自己的創建邏輯
+    @State var viewModel: MyPageViewModel
+    
+    @Binding var isMenuPresented: Bool
     
     var body: some View {
         NavigationStack {
-            // 使用與 HomeView 類似的左右分欄佈局
-            HStack(alignment: .top, spacing: 0) {
-                // 左側：功能選擇列表
-                // **(修正)** 移除 iOS 不支援的 selection 綁定，
-                // 改用 ForEach + Button 的方式手動處理點擊事件。
-                List {
-                    ForEach(MyPageViewModel.Function.allCases) { function in
-                        Button(action: {
-                            viewModel.selectedFunction = function
-                        }) {
-                            HStack {
-                                Text(function.rawValue)
-                                    .foregroundColor(viewModel.selectedFunction == function ? .accentColor : .primary)
+            contentView
+            // ✅ **【核心修正】** 使用 .task 修飾符取代 .onAppear
+            // 這不僅解決了編譯錯誤，也是處理非同步任務的現代最佳實踐
+            .task {
+                await viewModel.fetchDataForSelectedFunction()
+            }
+                .navigationTitle("個人頁面")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button {
+                            withAnimation(.easeInOut) {
+                                isMenuPresented.toggle()
                             }
+                        } label: {
+                            Image(systemName: "line.3.horizontal")
                         }
                     }
                 }
-                .listStyle(.sidebar)
-                .frame(width: 180)
-                
-                Divider()
-                
-                // 右側：內容顯示區
-                contentView
-            }
-            .navigationTitle("個人頁面")
-            // **(新增)** 加上 .alert 修飾符
-            .alert(viewModel.alertTitle, isPresented: $viewModel.showingAlert) {
-                Button("好") { }
-            } message: {
-                Text(viewModel.alertMessage)
-            }            .onAppear {
-                // 確保 ViewModel 使用的是從環境中傳入的正確 authManager
-                self.viewModel = MyPageViewModel(authManager: authManager)
-            }
-            .onChange(of: viewModel.selectedFunction) {
-                // 當選擇改變時，觸發資料重新獲取
-                Task {
-                    await viewModel.fetchDataForSelectedFunction()
+                .alert(viewModel.alertTitle, isPresented: $viewModel.showingAlert) {
+                    Button("好") { }
+                } message: {
+                    Text(viewModel.alertMessage)
                 }
-            }
+                // **(核心修改)** 使用 .onAppear 來觸發首次資料載入
+                
         }
     }
     
-    /// 右側的主要內容視圖
     @ViewBuilder
     private var contentView: some View {
         switch viewModel.viewState {
-        case .loading:
+        case .idle, .loading: // 將 idle 和 loading 狀態都顯示為進度條
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         case .error(let message):
             Text(message).foregroundColor(.red).frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -76,7 +60,6 @@ struct MyPageView: View {
             case .profile:
                 UserProfileView(user: authManager.loggedInUser)
             case .current, .history, .overdue:
-                // **(修改)** 傳入歸還的動作
                 LoanListView(
                     loans: viewModel.loans,
                     listType: viewModel.selectedFunction,
@@ -92,6 +75,38 @@ struct MyPageView: View {
 }
 
 // MARK: - Subviews
+
+/// **(新增)** 將功能列表提取為獨立的子視圖
+struct FunctionListView: View {
+    @Binding var selectedFunction: MyPageViewModel.Function
+    var onFunctionSelected: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text("功能選擇")
+                .font(.title2.bold())
+                .padding([.horizontal, .top])
+            
+            List {
+                ForEach(MyPageViewModel.Function.allCases) { function in
+                    Button(action: {
+                        if selectedFunction != function {
+                            selectedFunction = function
+                        }
+                        onFunctionSelected()
+                    }) {
+                        HStack {
+                            Text(function.rawValue)
+                                .foregroundColor(selectedFunction == function ? .accentColor : .primary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .listStyle(.plain)
+        }
+    }
+}
 
 /// 個人檔案視圖
 struct UserProfileView: View {
@@ -169,6 +184,11 @@ struct LoanCardView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            AsyncImageView(urlString: loan.imageUrl)
+                .frame(height: 180)
+                .frame(maxWidth: .infinity)
+                .background(Color(.systemGray5))
+                .clipped()
             Text(loan.title)
                 .font(.headline)
             
@@ -208,7 +228,13 @@ struct LoanCardView: View {
     }
 }
 
+// ... (其他 Subviews 保持不變)
+
 #Preview {
-    MyPageView()
-        .environment(AuthenticationManager())
+    // **(修改)** 更新預覽以匹配新的 init 方法
+    MyPageView(
+        viewModel: MyPageViewModel(authManager: AuthenticationManager()),
+        isMenuPresented: .constant(false)
+    )
+    .environment(AuthenticationManager())
 }

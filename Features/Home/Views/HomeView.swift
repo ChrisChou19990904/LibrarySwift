@@ -11,14 +11,20 @@ import SwiftUI
 
 struct HomeView: View {
     
-    /// 使用 @State 來持有 ViewModel 的實例。
-    /// 對於使用 @Observable 宏的物件，@State 是 Apple 推薦的作法。
-    @State private var viewModel = HomeViewModel()
+//    /// 使用 @State 來持有 ViewModel 的實例。
+//    /// 對於使用 @Observable 宏的物件，@State 是 Apple 推薦的作法。
+//    @State private var viewModel = HomeViewModel()
+    
+    // **(修改)** ViewModel 現在從外部傳入，不再自己創建
+    @State var viewModel: HomeViewModel
+    
     @Environment(AuthenticationManager.self) private var authManager
 
     /// 控制登入 sheet 是否顯示
     @State private var isShowingLoginSheet = false
-    @State private var isMenuPresented = false // **(新增)** 控制滑出選單的狀態
+//    @State private var isMenuPresented = false // **(新增)** 控制滑出選單的狀態
+    // **(修改)** isMenuPresented 現在是一個綁定，由父視圖 (MainView) 控制
+    @Binding var isMenuPresented: Bool
     @State private var isSearchPresented = false // **(新增)** 控制搜尋框的顯示狀態
 
     
@@ -33,49 +39,52 @@ struct HomeView: View {
                         .padding(.horizontal)
                         .padding(.bottom, 8)
                     }
+//                    // **(修改)** 使用 ZStack 來疊加主內容和滑出選單
+//                    ZStack(alignment: .leading) {
+//                        // 主內容區域
+//                        mainContent
+//                        
+//                        // 滑出選單
+//                        if isMenuPresented {
+//                            Group{
+//                                // 半透明背景，點擊可關閉選單
+//                                Color.black.opacity(0.4)
+//                                    .ignoresSafeArea()
+//                                    .onTapGesture {
+//                                        withAnimation(.easeInOut) {
+//                                            isMenuPresented = false
+//                                        }
+//                                    }
+//                                
+//                                // 分類列表選單
+//                                CategoryListView(
+//                                    categories: viewModel.categories,
+//                                    selectedCategoryId: $viewModel.selectedCategoryId,
+//                                    onCategorySelected: {
+//                                        // 當使用者選擇一個分類後，自動關閉選單
+//                                        withAnimation(.easeInOut) {
+//                                            isMenuPresented = false
+//                                        }
+//                                    }
+//                                )
+//                                .frame(width: 140)
+//                                .background(Color(.systemBackground)) // 適應深淺色模式的背景
+//                                .transition(.move(edge: .leading)) // 從左側滑入的動畫
+//                                .onDisappear {
+//                                    // 當選單關閉時，確保 isMenuPresented 狀態正確
+//                                    if isMenuPresented {
+//                                        isMenuPresented = false
+//                                    }
+//                                }
+//                            }
+//                            // **(修正)** 為選單的容器加上 zIndex，確保它總是在最上層
+//                            .zIndex(1)
+//                        }
+//                    }
                     
-                    // **(修改)** 使用 ZStack 來疊加主內容和滑出選單
-                    ZStack(alignment: .leading) {
-                        // 主內容區域
-                        mainContent
-                        
-                        // 滑出選單
-                        if isMenuPresented {
-                            Group{
-                                // 半透明背景，點擊可關閉選單
-                                Color.black.opacity(0.4)
-                                    .ignoresSafeArea()
-                                    .onTapGesture {
-                                        withAnimation(.easeInOut) {
-                                            isMenuPresented = false
-                                        }
-                                    }
-                                
-                                // 分類列表選單
-                                CategoryListView(
-                                    categories: viewModel.categories,
-                                    selectedCategoryId: $viewModel.selectedCategoryId,
-                                    onCategorySelected: {
-                                        // 當使用者選擇一個分類後，自動關閉選單
-                                        withAnimation(.easeInOut) {
-                                            isMenuPresented = false
-                                        }
-                                    }
-                                )
-                                .frame(width: 140)
-                                .background(Color(.systemBackground)) // 適應深淺色模式的背景
-                                .transition(.move(edge: .leading)) // 從左側滑入的動畫
-                                .onDisappear {
-                                    // 當選單關閉時，確保 isMenuPresented 狀態正確
-                                    if isMenuPresented {
-                                        isMenuPresented = false
-                                    }
-                                }
-                            }
-                            // **(修正)** 為選單的容器加上 zIndex，確保它總是在最上層
-                            .zIndex(1)
-                        }
-                    }
+                    // **(修改)** 這裡不再需要 ZStack，直接顯示主內容
+                    mainContent
+                    
                 }
                 .navigationBarTitleDisplayMode(.inline) // 設定為 inline 以便自訂標題
                 .toolbar {
@@ -300,7 +309,12 @@ struct BookCardView: View {
     }
 }
 
-// 這個預覽區塊可以讓你在 Xcode 中即時看到 UI 效果，非常方便
+// **(修改)** 為預覽提供必要的參數
 #Preview {
-    HomeView()
+    // 為了讓預覽正常運作，我們需要手動提供它所需的 viewModel 和 isMenuPresented 綁定。
+    // .constant(false) 創建了一個不會改變的綁定值，適合用於預覽。
+    HomeView(viewModel: HomeViewModel(), isMenuPresented: .constant(false))
+        // 同時，因為 HomeView 內部使用了 @Environment，預覽時也需要提供對應的環境物件。
+        .environment(AuthenticationManager())
 }
+

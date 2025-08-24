@@ -24,6 +24,9 @@ class BookDetailViewModel {
     var alertTitle = ""
     var alertMessage = ""
     
+    // **(新增)** 用於顯示借閱確認對話框
+    var showingBorrowConfirmation = false
+    
     enum ViewState {
         case loading
         case content
@@ -60,11 +63,20 @@ class BookDetailViewModel {
         }
     }
     
+    /// **(修改)** 第一步：請求借閱，這只會觸發確認對話框
+    func requestBorrow() {
+        guard authManager.loggedInUser != nil else {
+            showAlert(title: "需要登入", message: "請先登入才能借閱書籍。")
+            return
+        }
+        showingBorrowConfirmation = true
+    }
     
     /// **(新增)** 執行借閱書籍的動作
-    func borrowBook() async {
+    /// **(新增)** 第二步：使用者確認後，才真正執行借閱 API 呼叫
+    func confirmBorrow() async {
         guard let userId = authManager.loggedInUser?.id else {
-            showAlert(title: "錯誤", message: "請先登入才能借閱書籍。")
+            showAlert(title: "錯誤", message: "無法獲取使用者資訊。")
             return
         }
         
@@ -73,11 +85,11 @@ class BookDetailViewModel {
         do {
             let response = try await APIService.shared.borrowBook(request: request)
             if response.success {
-                showAlert(title: "借閱成功", message: "您已成功借閱《\(bookDetail?.title ?? "")》！\n書籍副本碼: \(response.borrowedBookUniqueCode ?? "N/A")")
-                // 成功後，重新整理資料以更新可借閱數量
+                // **(修正)** 先在背景重新整理資料
                 await fetchDetails()
-            } else {
-                showAlert(title: "借閱失敗", message: response.message ?? "發生未知錯誤。")
+                // 然後再顯示成功的提示框，這樣提示框就不會被中斷
+                showAlert(title: "借閱成功", message: "您已成功借閱《\(bookDetail?.title ?? "")》！\n書籍副本碼: \(response.borrowedBookUniqueCode ?? "N/A")")
+            } else {                showAlert(title: "借閱失敗", message: response.message ?? "發生未知錯誤。")
             }
         } catch {
             showAlert(title: "借閱失敗", message: "網路請求失敗，請稍後再試。")

@@ -18,7 +18,9 @@ struct AsyncImageView: View {
             switch phase {
             case .empty:
                 // 圖片尚未開始載入時，顯示一個進度指示器
-                ProgressView()
+                Image(systemName: "book.closed.fill")
+                    .font(.largeTitle)
+                    .foregroundColor(.secondary)
             case .success(let image):
                 // 圖片成功載入，顯示圖片
                 image

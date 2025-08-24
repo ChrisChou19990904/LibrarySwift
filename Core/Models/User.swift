@@ -13,8 +13,7 @@ import Foundation
 ///
 /// - Conforms to `Codable`: 讓 Swift 能夠自動在 JSON 和此結構之間轉換。
 /// - Conforms to `Identifiable`: 讓使用者物件可以被唯一識別。
-struct User: Codable, Identifiable {
-    
+struct User: Codable, Identifiable, Equatable { // **(修正)** 加入 Equatable 協議
     // MARK: - Properties
     
     /// 使用者的唯一識別碼。
@@ -39,4 +38,9 @@ struct User: Codable, Identifiable {
     
     /// 聯絡地址 (可選)。
     let address: String?
+    
+    // 注意：
+    // 因為 User 的所有屬性都已經是 Equatable，
+    // 所以我們只需要宣告遵循協議，Swift 編譯器就會自動產生必要的 == 比較函式。
+    
 }

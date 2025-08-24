@@ -31,4 +31,7 @@ struct BookDetail: Codable, Identifiable {
     
     /// 這本書的所有實體副本列表。
     let bookCopies: [BookCopy]
+    
+    let imageUrl: String? // **(新增)** 書籍封面的圖片 URL (可選)
+
 }

@@ -17,6 +17,7 @@ enum APIServiceError: Error {
     case decodingError(Error)
     // **(修正)** 在 serverError case 中加入 message 參數，使其與呼叫時的格式一致。
     case serverError(statusCode: Int, message: String?)
+    case authenticationError // 用於表示需要 token 但 token 不存在的情況
     case unknownError
 }
 
@@ -53,17 +54,17 @@ class APIService {
     private init() {}
     
     // MARK: - Auth APIs (從 AuthService 合併過來)
-    
+    // 修正: - Public APIs (不需要 Token)
     func login(request: LoginRequest) async throws -> LoginResponse {
-        return try await postData(url: APIEndpoints.login, body: request)
+        return try await performRequest(url: APIEndpoints.login, method: "POST", body: request, requiresAuth: false)
     }
     
     func register(request: RegistrationRequest) async throws -> RegistrationResponse {
-        return try await postData(url: APIEndpoints.register, body: request)
+        return try await performRequest(url: APIEndpoints.register, method: "POST", body: request, requiresAuth: false)
     }
-    
+        
     // MARK: - Public API Methods
-    
+    // 修正: - Public APIs (不需要 Token)
     /// 從後端獲取書籍列表。
     ///
     /// - Parameters:
@@ -73,7 +74,7 @@ class APIService {
     /// - Throws: `APIServiceError` 如果請求失敗或資料解析錯誤。
     func fetchBooks(categoryId: Int? = nil, searchTerm: String? = nil) async throws -> [Book] {
         let url = APIEndpoints.books(categoryId: categoryId, searchTerm:searchTerm)
-        return try await fetchData(from: url)
+        return try await performRequest(url: url, requiresAuth: false)
     }
     
     /// 從後端獲取所有書籍分類。
@@ -81,13 +82,13 @@ class APIService {
     /// - Returns: 一個 `Category` 物件的陣列。
     /// - Throws: `APIServiceError` 如果請求失敗或資料解析錯誤。
     func fetchCategories() async throws -> [Category] {
-        return try await fetchData(from: APIEndpoints.allCategories)
+        return try await performRequest(url: APIEndpoints.allCategories, requiresAuth: false)
     }
     
     /// **(新增)** 從後端獲取指定書籍的詳細資訊。
     func fetchBookDetails(bookId: Int) async throws -> BookDetail {
         let url = APIEndpoints.bookDetails(bookId: bookId)
-        return try await fetchData(from: url)
+        return try await performRequest(url: url, requiresAuth: false)
     }
     
     /// 從後端獲取指定使用者的個人檔案。
@@ -97,77 +98,63 @@ class APIService {
     /// - Throws: `APIServiceError` 如果請求失敗或資料解析錯誤。
     func fetchUserProfile(userId: Int) async throws -> User {
         let url = APIEndpoints.userProfile(userId: userId)
-        return try await fetchData(from: url)
+        return try await performRequest(url: url, requiresAuth: true)
     }
     
     // MARK: - Loan APIs (新增)
     
     func fetchCurrentLoans(userId: Int) async throws -> [Loan] {
         let url = APIEndpoints.currentLoans(userId: userId)
-        return try await fetchData(from: url)
+        return try await performRequest(url: url, requiresAuth: true)
     }
     
     func fetchLoanHistory(userId: Int) async throws -> [Loan] {
         let url = APIEndpoints.loanHistory(userId: userId)
-        return try await fetchData(from: url)
+        return try await performRequest(url: url, requiresAuth: true)
     }
     
     func fetchOverdueLoans(userId: Int) async throws -> [Loan] {
         let url = APIEndpoints.overdueLoans(userId: userId)
-        return try await fetchData(from: url)
+        return try await performRequest(url: url, requiresAuth: true)
     }
     
     // MARK: - Loan Action APIs (新增)
     
     func borrowBook(request: BorrowRequest) async throws -> BorrowResponse {
-        return try await postData(url: APIEndpoints.borrowBook, body: request)
+        return try await performRequest(url: APIEndpoints.borrowBook, method: "POST", body: request, requiresAuth: true)
     }
     
     func returnBook(request: ReturnRequest) async throws -> ReturnResponse {
-        return try await postData(url: APIEndpoints.returnBook, body: request)
+        return try await performRequest(url: APIEndpoints.returnBook, method: "POST", body: request, requiresAuth: true)
     }
     
-    // MARK: - Generic Fetch Logic
     
-    /// 一個通用的異步函數，用於從指定的 URL 獲取並解碼資料。
-    ///
-    /// - Parameter url: 要從中獲取資料的 URL。
-    /// - Returns: 一個符合 `Codable` 協議的解碼後物件。
-    /// - Throws: `APIServiceError`。
-    private func fetchData<T: Codable>(from url: URL) async throws -> T {
-        do {
-            // 1. 使用 async/await 執行網路請求
-            let (data, response) = try await URLSession.shared.data(from: url)
-            
-            // 2. 檢查 HTTP 回應狀態碼
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                let errorMessage = String(data: data, encoding: .utf8)
-                throw APIServiceError.serverError(statusCode: statusCode, message: errorMessage)
-            }
-            
-            // 3. 嘗試將回傳的 data 解碼為指定的泛型 T
-            return try decoder.decode(T.self, from: data)
-            
-        } catch let error as DecodingError {
-            // 處理 JSON 解析錯誤
-            throw APIServiceError.decodingError(error)
-        } catch {
-            // 處理其他網路錯誤
-            throw APIServiceError.networkError(error)
-        }
-    }
     
-    /// 通用的 POST 請求方法
-    private func postData<T: Codable, U: Codable>(url: URL, body: T) async throws -> U {
+    /// 統一的網路請求處理器。
+    /// - Parameter requiresAuth: 決定是否需要在請求 Header 中附加 Bearer Token。
+    private func performRequest<T: Codable>(
+        url: URL,
+        method: String = "GET",
+        body: (any Encodable)? = nil,
+        requiresAuth: Bool
+    ) async throws -> T {
+        
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // 自動附加 JWT
-        if let token = TokenManager.shared.getToken() {
+        
+        // **(核心修改)** 只有在 `requiresAuth` 為 true 時才附加 Token
+        if requiresAuth {
+            guard let token = TokenManager.shared.getToken() else {
+                // 如果需要 token 但 token 不存在，直接拋出驗證錯誤
+                throw APIServiceError.authenticationError
+            }
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        request.httpBody = try encoder.encode(body)
+        
+        if let body = body {
+            request.httpBody = try encoder.encode(body)
+        }
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -177,17 +164,84 @@ class APIService {
             }
             
             guard (200...299).contains(httpResponse.statusCode) else {
-                // 嘗試解析後端回傳的錯誤訊息
                 let errorMessage = String(data: data, encoding: .utf8)
                 throw APIServiceError.serverError(statusCode: httpResponse.statusCode, message: errorMessage)
             }
             
-            return try decoder.decode(U.self, from: data)
+            return try decoder.decode(T.self, from: data)
             
         } catch let error as DecodingError {
             throw APIServiceError.decodingError(error)
         } catch {
-            throw error // 重新拋出已知的 APIServiceError 或其他網路錯誤
+            // 重新拋出已知的 APIServiceError 或其他網路錯誤
+            throw error
         }
     }
+
+
+    
+//    // MARK: - Generic Fetch Logic
+//    
+//    /// 一個通用的異步函數，用於從指定的 URL 獲取並解碼資料。
+//    ///
+//    /// - Parameter url: 要從中獲取資料的 URL。
+//    /// - Returns: 一個符合 `Codable` 協議的解碼後物件。
+//    /// - Throws: `APIServiceError`。
+//    private func fetchData<T: Codable>(from url: URL) async throws -> T {
+//        do {
+//            // 1. 使用 async/await 執行網路請求
+//            let (data, response) = try await URLSession.shared.data(from: url)
+//            
+//            // 2. 檢查 HTTP 回應狀態碼
+//            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+//                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+//                let errorMessage = String(data: data, encoding: .utf8)
+//                throw APIServiceError.serverError(statusCode: statusCode, message: errorMessage)
+//            }
+//            
+//            // 3. 嘗試將回傳的 data 解碼為指定的泛型 T
+//            return try decoder.decode(T.self, from: data)
+//            
+//        } catch let error as DecodingError {
+//            // 處理 JSON 解析錯誤
+//            throw APIServiceError.decodingError(error)
+//        } catch {
+//            // 處理其他網路錯誤
+//            throw APIServiceError.networkError(error)
+//        }
+//    }
+//    
+//    /// 通用的 POST 請求方法
+//    private func postData<T: Codable, U: Codable>(url: URL, body: T) async throws -> U {
+//        var request = URLRequest(url: url)
+//        request.httpMethod = "POST"
+//        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+//        // 自動附加 JWT
+//        if let token = TokenManager.shared.getToken() {
+//            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+//        }
+//        request.httpBody = try encoder.encode(body)
+//        
+//        do {
+//            let (data, response) = try await URLSession.shared.data(for: request)
+//            
+//            guard let httpResponse = response as? HTTPURLResponse else {
+//                throw APIServiceError.unknownError
+//            }
+//            
+//            guard (200...299).contains(httpResponse.statusCode) else {
+//                // 嘗試解析後端回傳的錯誤訊息
+//                let errorMessage = String(data: data, encoding: .utf8)
+//                throw APIServiceError.serverError(statusCode: httpResponse.statusCode, message: errorMessage)
+//            }
+//            
+//            return try decoder.decode(U.self, from: data)
+//            
+//        } catch let error as DecodingError {
+//            throw APIServiceError.decodingError(error)
+//        } catch {
+//            throw error // 重新拋出已知的 APIServiceError 或其他網路錯誤
+//        }
+//    }
+        
 }

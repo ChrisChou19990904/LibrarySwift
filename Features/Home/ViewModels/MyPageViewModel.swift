@@ -23,14 +23,25 @@ class MyPageViewModel {
     
     // MARK: - State Properties
     
-    var selectedFunction: Function = .current
-    var loans: [Loan] = []
-    var viewState: ViewState = .loading
+    var selectedFunction: Function = .current {
+        // **(核心修正)** 使用 didSet 屬性觀察器。
+        // 這可以確保無論是從哪裡（例如 MainView 的選單）改變了 selectedFunction，
+        // 都會自動觸發一次新的資料獲取。這是最穩健的 MVVM 模式。
+        didSet {
+            // 避免在值沒有實際改變時重複獲取
+            if oldValue != selectedFunction {
+                Task {
+                    await fetchDataForSelectedFunction()
+                }
+            }
+        }
+    }
     
+    var loans: [Loan] = []
+    var viewState: ViewState = .idle // 預設為閒置狀態
+
     enum ViewState {
-        case loading
-        case content
-        case error(String)
+        case idle, loading, content, error(String)
     }
     
     private let authManager: AuthenticationManager
@@ -44,9 +55,8 @@ class MyPageViewModel {
     
     init(authManager: AuthenticationManager) {
         self.authManager = authManager
-        Task {
-            await fetchDataForSelectedFunction()
-        }
+        // **(核心修改)** 不在 init 中自動獲取資料，交由 View 控制首次載入時機
+
     }
     
     // MARK: - Data Fetching
@@ -63,7 +73,8 @@ class MyPageViewModel {
         do {
             switch selectedFunction {
             case .profile:
-                // 個人檔案資料直接從 authManager 讀取，無需額外請求
+                // 個人檔案資料直接從 authManager 讀取，loans 設為空
+                loans = []
                 viewState = .content
             case .current:
                 loans = try await APIService.shared.fetchCurrentLoans(userId: userId)
