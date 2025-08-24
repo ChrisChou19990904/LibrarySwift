@@ -51,6 +51,17 @@ class MyPageViewModel {
     var alertTitle = ""
     var alertMessage = ""
     
+    // ✅ **【新增】** 用於管理歸還確認對話框的狀態
+    var showingReturnConfirmation = false
+    private var loanToReturnId: Int?
+    
+    /// **(新增)** 計算屬性，用於在對話框中顯示書名
+    var loanToReturnTitle: String {
+        guard let loanId = loanToReturnId else { return "這本書" }
+        // 從目前的書單中找到對應的書籍標題
+        return loans.first { $0.loanId == loanId }?.title ?? "這本書"
+    }
+    
     // MARK: - Initializer
     
     init(authManager: AuthenticationManager) {
@@ -92,8 +103,23 @@ class MyPageViewModel {
         }
     }
     
+    /// **(新增)** 步驟 1: View 呼叫此方法來請求歸還，觸發確認對話框
+    func requestReturn(loanId: Int) {
+        self.loanToReturnId = loanId
+        self.showingReturnConfirmation = true
+    }
+    
     /// **(新增)** 執行歸還書籍的動作
-    func returnBook(loanId: Int) async {
+    func confirmReturn() async {
+        guard let loanId = loanToReturnId else {
+            // 如果沒有 loanId，則不執行任何操作
+            return
+        }
+        
+        // 清除暫存的 ID
+        self.loanToReturnId = nil
+
+
         guard let userId = authManager.loggedInUser?.id else {
             showAlert(title: "錯誤", message: "無法獲取使用者資訊。")
             return
@@ -104,9 +130,9 @@ class MyPageViewModel {
         do {
             let response = try await APIService.shared.returnBook(request: request)
             if response.success {
-                showAlert(title: "歸還成功", message: "書籍已成功歸還！")
                 // 成功後，重新整理列表
                 await fetchDataForSelectedFunction()
+                showAlert(title: "歸還成功", message: "書籍已成功歸還！")
             } else {
                 showAlert(title: "歸還失敗", message: response.message ?? "發生未知錯誤。")
             }

@@ -43,7 +43,7 @@ struct BookDetailView: View {
         } message: {
             Text("您確定要借閱《\(viewModel.bookDetail?.title ?? "這本書")》嗎？")
         }
-        .onAppear {
+        .task {
             // 注入真實的 authManager
             self.viewModel = BookDetailViewModel(bookId: viewModel.bookId, authManager: authManager)
         }

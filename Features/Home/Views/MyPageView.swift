@@ -22,9 +22,9 @@ struct MyPageView: View {
             contentView
             // ✅ **【核心修正】** 使用 .task 修飾符取代 .onAppear
             // 這不僅解決了編譯錯誤，也是處理非同步任務的現代最佳實踐
-            .task {
-                await viewModel.fetchDataForSelectedFunction()
-            }
+                .task {
+                    await viewModel.fetchDataForSelectedFunction()
+                }
                 .navigationTitle("個人頁面")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -38,13 +38,25 @@ struct MyPageView: View {
                         }
                     }
                 }
+                // 一般提示框
                 .alert(viewModel.alertTitle, isPresented: $viewModel.showingAlert) {
                     Button("好") { }
                 } message: {
                     Text(viewModel.alertMessage)
                 }
-                // **(核心修改)** 使用 .onAppear 來觸發首次資料載入
-                
+                // ✅ **【新增】** 歸還書籍的確認對話框
+                .alert("確認歸還", isPresented: $viewModel.showingReturnConfirmation) {
+                    // "確定" 按鈕，建議使用 .destructive 角色，使其呈現紅色以示警告
+                    Button("確定", role: .destructive) {
+                        Task {
+                            await viewModel.confirmReturn()
+                        }
+                    }
+                    // "取消" 按鈕
+                    Button("取消", role: .cancel) { }
+                } message: {
+                    Text("您確定要歸還《\(viewModel.loanToReturnTitle)》嗎？")
+                }
         }
     }
     
@@ -63,16 +75,18 @@ struct MyPageView: View {
                 LoanListView(
                     loans: viewModel.loans,
                     listType: viewModel.selectedFunction,
+                    // ✅ **【修改】** onReturn 現在呼叫 requestReturn 來觸發確認流程
                     onReturn: { loanId in
-                        Task {
-                            await viewModel.returnBook(loanId: loanId)
-                        }
+                        viewModel.requestReturn(loanId: loanId)
                     }
                 )
             }
         }
     }
 }
+    
+
+
 
 // MARK: - Subviews
 
