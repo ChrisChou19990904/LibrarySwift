@@ -20,7 +20,7 @@ CREATE TABLE users (
 
 
 CREATE TABLE user_details (
-                              user_id INT PRIMARY KEY, -- 這裡 user_id 作為主鍵，同時也是外鍵
+                              user_id INT PRIMARY KEY,
                               name VARCHAR(100) NOT NULL,
                               email VARCHAR(255) UNIQUE NOT NULL,
                               phone VARCHAR(20),
@@ -31,13 +31,13 @@ CREATE TABLE user_details (
 
 CREATE TABLE publishers (
                             id INT PRIMARY KEY AUTO_INCREMENT,
-                            pub_name VARCHAR(255) UNIQUE NOT NULL -- 出版社名稱通常也設為唯一
+                            pub_name VARCHAR(255) UNIQUE NOT NULL
 );
 
 
 CREATE TABLE category (
                           id INT PRIMARY KEY AUTO_INCREMENT,
-                          category_title VARCHAR(100) UNIQUE NOT NULL -- 分類名稱應唯一
+                          category_title VARCHAR(100) UNIQUE NOT NULL
 );
 
 
@@ -53,20 +53,17 @@ CREATE TABLE books (
                        FOREIGN KEY (category_id) REFERENCES category(id),
                        FOREIGN KEY (publisher_id) REFERENCES publishers(id)
 );
--- 為 title author publisher 建立索引，以加速查詢
 CREATE INDEX idx_books_title ON books (title);
 CREATE INDEX idx_books_author ON books (author);
 CREATE INDEX idx_books_publisher ON books (publisher_id);
--- 新增欄位 imageUrl 到 books 表，用於存儲書籍封面圖片的URL
 
 CREATE TABLE book_copies (
                              id INT PRIMARY KEY AUTO_INCREMENT,
                              book_id INT NOT NULL,
                              unique_code VARCHAR(50) UNIQUE NOT NULL,
-                             status ENUM('A', 'L', 'R') DEFAULT 'A', -- 這裡的 R (Reserved) 表示預約
+                             status ENUM('A', 'L', 'R') DEFAULT 'A', -- R (Reserved) 表預約
                              FOREIGN KEY (book_id) REFERENCES books(id)
 );
--- 為 unique_code 建立索引，以加速查詢
 CREATE INDEX idx_book_copies_unique_code ON book_copies (unique_code);
 
 
@@ -79,12 +76,11 @@ CREATE TABLE loans (
                        FOREIGN KEY (user_id) REFERENCES users(id),
                        FOREIGN KEY (book_copies_id) REFERENCES book_copies(id)
 );
--- 建議為外鍵建立索引，加速查詢和JOIN
 CREATE INDEX idx_loans_user_id ON loans (user_id);
 CREATE INDEX idx_loans_book_copies_id ON loans (book_copies_id);
 
 
--- 初始資料插入語句
+-- mock data
 -- 1. 插入 publishers 資料
 INSERT INTO publishers (pub_name) VALUES
                                       ('皇冠文化'),
@@ -102,7 +98,6 @@ INSERT INTO category (category_title) VALUES
                                           ('心理勵志');
 
 -- 3. 插入 users 資料，只有一個指定為ROLE_ADMIN
--- 注意：實際應用中，密碼應經過雜湊處理，這裡僅為範例。
 INSERT INTO users (card_id, account, password, role) VALUES
                                                          ('LIB001', 'adminJAVA', '$2a$10$6SdLHZBE4tE6KfW9SrgKpeVl0fxUxyPbVHVJpjO5giOwr/6/tkWAm', 'ROLE_ADMIN'),
                                                          ('LIB002', 'userJAVA', '$2a$10$6SdLHZBE4tE6KfW9SrgKpeVl0fxUxyPbVHVJpjO5giOwr/6/tkWAm', 'ROLE_USER'),
@@ -111,7 +106,6 @@ INSERT INTO users (card_id, account, password, role) VALUES
                                                          ('LIB005', 'wongfive55', 'hashed_password_5', 'ROLE_USER');
 
 -- 4. 插入 user_details 資料
--- user_id 需對應 users 表的 id
 INSERT INTO user_details (user_id, name, email, phone, address) VALUES
                                                                     (1, '管理者', 'admin@example.com', '0912345678', '台北市信義區忠孝東路100號'),
                                                                     (2, '一般人', 'user@example.com', '0911222333', '新北市板橋區文化路200號'),
@@ -120,7 +114,6 @@ INSERT INTO user_details (user_id, name, email, phone, address) VALUES
                                                                     (5, '王五', 'wongfive@example.com', '0945678901', '台南市中西區西門路一段500號');
 
 -- 5. 插入 books 資料
--- category_id 和 publisher_id 需對應 category 和 publishers 表的 id
 INSERT INTO books (title, author, category_id, publish_year, publisher_id, price, image_url) VALUES
                                                                                       ('GOTH斷掌事件', '乙一', (SELECT id FROM category WHERE category_title = '文學小說'), 2002, (SELECT id FROM publishers WHERE pub_name = '皇冠文化'), 270.00, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuxofcdv-oOC_4Qvao34xUbCrHA_871k0_7kD4kNnR7wvuWGTRyO3WolbOZ0xRVYHUz5E&usqp=CAU'),
                                                                                       ('哈利波特：神秘的魔法石', 'J.K.羅琳', (SELECT id FROM category WHERE category_title = '文學小說'), 1997, (SELECT id FROM publishers WHERE pub_name = '皇冠文化'), 350.00, 'https://upload.wikimedia.org/wikipedia/zh/3/3c/Hp1tw.jpg'),
@@ -133,7 +126,6 @@ INSERT INTO books (title, author, category_id, publish_year, publisher_id, price
 
 
 -- 6. 插入 book_copies 資料
--- 為每本書創建多個副本，並設定初始狀態
 INSERT INTO book_copies (book_id, unique_code, status) VALUES
                                                            ((SELECT id FROM books WHERE title = 'GOTH斷掌事件'), 'GOTH001A', 'A'), -- Available
                                                            ((SELECT id FROM books WHERE title = 'GOTH斷掌事件'), 'GOTH001B', 'A'), -- Available
@@ -162,7 +154,6 @@ INSERT INTO book_copies (book_id, unique_code, status) VALUES
 
 
 -- 7. 插入 loans 資料
--- 模擬一些借閱記錄，包括已歸還和尚未歸還的
 INSERT INTO loans (user_id, book_copies_id, loan_date, return_date) VALUES
                                                                         ((SELECT id FROM users WHERE account = 'adminJAVA'), (SELECT id FROM book_copies WHERE unique_code = 'HP001B'), '2025-06-28 10:00:00', NULL), -- 劉一借了哈利波特B，未還
                                                                         ((SELECT id FROM users WHERE account = 'userJAVA'), (SELECT id FROM book_copies WHERE unique_code = 'DY001B'), '2025-06-25 14:30:00', NULL), -- 陳二借了被討厭的勇氣B，未還
@@ -183,149 +174,6 @@ SELECT * FROM book_copies ;
 SELECT * FROM loans ;
 
 
-## 使用者查詢
-## 初步書籍查詢
--- 查詢特定關鍵字的書籍
-SELECT * FROM books WHERE title LIKE '%關鍵字%';
-
--- 查詢書名，作者，分類，出版商，年份，可借閱數量，的書籍（left join publishers 和 category 和 book_copies）
-SELECT b.id, b.title, b.author, c.category_title, p.pub_name, b.publish_year,
-       COUNT(bc.id) AS available_copies
-FROM books b
-         JOIN category c ON b.category_id = c.id
-         JOIN publishers p ON b.publisher_id = p.id
-         LEFT JOIN book_copies bc ON b.id = bc.book_id AND bc.status = 'A' -- 只計算可借閱的副本
-GROUP BY b.id, c.category_title, p.pub_name;
-
--- 查詢書名，作者，分類，出版商，年份，可借閱數量，總數量，的書籍（left join publishers 和 category 和 book_copies）
-SELECT
-    b.id                           AS book_id,
-    b.title                        AS '書名',
-    b.author                       AS '作者',
-    c.category_title               AS '分類',
-    b.publish_year                 AS '出版年份',
-    p.pub_name                     AS '出版商',
-    -- 計算可借閱數量：裡面的 IF 狀態為 'A' (Available) 的副本，是 (Available)，則計為 1，否則計為 0。
-    -- 外面的 SUM 將所有副本的 1 或 0 加總，得到該書的可借閱副本總數。
-    SUM(IF(bc.status = 'A', 1, 0)) AS '可借閱數量',
-    -- 計算總副本數量：所有副本的總數，會計算所有非 NULL 的 book_copies.id，這在 GROUP BY 後就是該書的總副本數。
-    COUNT(bc.id)                   AS '總副本數量'
-FROM
-    books b
--- LEFT JOIN publishers：連接出版社資訊
-        LEFT JOIN
-    publishers p ON b.publisher_id = p.id
--- LEFT JOIN category：連接分類資訊
-        LEFT JOIN
-    category c ON b.category_id = c.id
--- LEFT JOIN book_copies：連接書籍副本資訊，用於計算數量（使用 LEFT JOIN 確保即使沒有副本的書也能被列出，其「可借閱數量」和「總副本數量」會顯示為 0。）
-        LEFT JOIN
-    book_copies bc ON b.id = bc.book_id
-GROUP BY
-    -- 由於你使用了聚合函數 (SUM, COUNT)，你需要將所有非聚合的 SELECT 欄位都放在 GROUP BY 子句中，以便資料庫知道如何分組計算。
-    b.id, b.title, b.author, c.category_title, b.publish_year, p.pub_name
-ORDER BY
-    b.title; -- 依書名排序，方便查看
-
--- 查詢特定作者的書籍
-SELECT * FROM books WHERE author = '特定作者';
--- 查詢特定分類的書籍（練習用）
-SELECT * FROM books WHERE category_id = (SELECT id FROM category WHERE category_title = '特定分類');
--- 查詢特定分類的書籍（實際用，前端直接送category_id，避免二次查詢）
-SELECT * FROM books WHERE category_id = 1; -- 假設1是文學小說的ID
--- 查詢特定出版社的書籍
-SELECT * FROM books WHERE publisher_id = 1; -- 假設1是皇冠文化的ID
-
-
-## 點選後，特定書籍詳細資訊查詢
--- (上方)查詢特定書籍詳細資訊，包括分類和出版社
-SELECT b.id, b.title, b.author, c.category_title, p.pub_name, b.publish_year, b.price
-FROM books b
-         JOIN category c ON b.category_id = c.id
-         JOIN publishers p ON b.publisher_id = p.id
-WHERE b.id = 1;
--- (下方)查詢特定書籍的所有副本
-SELECT bc.unique_code AS '書籍碼',
-       CASE bc.status
-           WHEN 'A' THEN '可借閱'
-           WHEN 'L' THEN '已借出'
-           WHEN 'R' THEN '已預約'
-           ELSE '未知狀態'
-           END AS '借閱狀態'
-FROM book_copies bc
-WHERE book_id = 2;
--- 結合版 --
-SELECT
-    b.id, b.title, b.author, c.category_title, p.pub_name, b.publish_year, b.price,
-    bc.unique_code AS '書籍碼',
-    CASE bc.status
-        WHEN 'A' THEN '可借閱'
-        WHEN 'L' THEN '已借出'
-        WHEN 'R' THEN '已預約'
-        ELSE '未知狀態'
-        END AS '借閱狀態'
-FROM books b
-         JOIN category c ON b.category_id = c.id
-         JOIN publishers p ON b.publisher_id = p.id
-         LEFT JOIN book_copies bc ON b.id = bc.book_id
-WHERE b.id = 1
-ORDER BY bc.unique_code;
-
--- 結合版2 --
-SELECT
-    b.id, b.title, b.author, c.category_title, b.publish_year, p.pub_name, b.price,
-    bc.unique_code AS '書籍碼',
-    CASE bc.status
-        WHEN 'A' THEN '可借閱'
-        WHEN 'L' THEN '已借出'
-        WHEN 'R' THEN '已預約'
-        ELSE '未知狀態'
-        END AS '借閱狀態'
-FROM books b
-         JOIN category c ON b.category_id = c.id
-         JOIN publishers p ON b.publisher_id = p.id
-         LEFT JOIN book_copies bc ON b.id = bc.book_id
-WHERE b.id = 2
-ORDER BY bc.unique_code;
-
-
-## 個人頁面
--- 個人借閱中
-SELECT b.id, b.title, bc.unique_code, l.loan_date, l.return_date
-FROM loans l
-         JOIN book_copies bc ON l.book_copies_id = bc.id
-         JOIN books b ON bc.book_id = b.id
-WHERE l.user_id = 1 -- 假設1是當前使用者的ID
-  AND l.return_date IS NULL -- 只查詢未歸還的借閱記錄
-ORDER BY l.loan_date DESC ;
-
--- 個人借閱歷史
-SELECT b.id, b.title, bc.unique_code, l.loan_date, l.return_date
-FROM loans l
-         JOIN book_copies bc ON l.book_copies_id = bc.id
-         JOIN books b ON bc.book_id = b.id
-WHERE l.user_id = 1 -- 假設1是當前使用者的ID
-  AND l.return_date IS NOT NULL -- 只查詢已歸還的借閱記錄
-ORDER BY l.return_date DESC;
-
--- 個人逾期未歸還
-SELECT b.id, b.title, bc.unique_code, l.loan_date, l.return_date
-FROM loans l
-         JOIN book_copies bc ON l.book_copies_id = bc.id
-         JOIN books b ON bc.book_id = b.id
-WHERE l.user_id = 1 -- 假設1是當前使用者的ID
-  AND l.return_date IS NULL -- 尚未歸還
-  AND l.loan_date < NOW() - INTERVAL 30 DAY; -- 超過規定30天未歸還
-
--- 個人資料，其中密碼固定都顯示**** --
-SELECT u.id, ud.name, u.card_id, u.account, ud.email, ud.phone, ud.address
-FROM users u
-         JOIN user_details ud ON u.id = ud.user_id
-WHERE u.id = 1; -- 假設1是當前使用者的ID
-
-
-
-
 
 -- 借閱 --
 INSERT INTO loans (user_id, book_copies_id, loan_date, return_date) VALUES
@@ -341,8 +189,8 @@ START TRANSACTION;
 
 UPDATE loans
 SET return_date = NOW() -- 設定歸還日期為當前時間
-WHERE book_copies_id = (SELECT id FROM book_copies WHERE unique_code = 'GOTH001A' ) -- 根據書籍碼找到對應的副本ID
-  AND user_id = 2; -- 假設當前使用者的ID
+WHERE book_copies_id = (SELECT id FROM book_copies WHERE unique_code = 'GOTH001A' )
+  AND user_id = 2;
 
 UPDATE book_copies
 SET status = 'A' -- 更新副本狀態為可借閱
@@ -350,7 +198,6 @@ WHERE  unique_code = 'GOTH001A' ; -- 假設這是要歸還的書籍碼
 
 COMMIT;
 
--- 新增會員 --
--- 註冊頁面，使用者要輸入的有 account, password,name, email, phone, address
+
 
 
