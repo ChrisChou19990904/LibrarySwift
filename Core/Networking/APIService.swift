@@ -37,12 +37,12 @@ class APIService {
         //decoder.dateDecodingStrategy = .iso8601
         // 舊的 .iso8601 策略過於嚴格，我們改用自訂的 DateFormatter 來確保能正確解析 API 回傳的日期格式。
         let formatter = DateFormatter()
-        // 設定與您 API 回應完全匹配的日期格式
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        // 設定與後端 API 回應的日期格式匹配
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         // 使用 POSIX 地區設定，避免使用者手機的地區設定影響日期解析
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        // 指定時區為 UTC
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        // 根據需求設定時區（見下方說明）
+        formatter.timeZone = TimeZone(identifier: "Asia/Taipei") // 假設你的應用使用台灣時區
         
         decoder.dateDecodingStrategy = .formatted(formatter)
         return decoder
