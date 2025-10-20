@@ -71,6 +71,8 @@ struct MyPageView: View {
             switch viewModel.selectedFunction {
             case .profile:
                 UserProfileView(user: authManager.loggedInUser)
+            case .statsAll:
+                AllLoansStatsView()
             case .current, .history, .overdue:
                 LoanListView(
                     loans: viewModel.loans,
