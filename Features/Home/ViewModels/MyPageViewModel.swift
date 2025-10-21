@@ -17,6 +17,7 @@ class MyPageViewModel {
         case current = "我的書櫃"
         case history = "借閱紀錄"
         case overdue = "逾期未歸還"
+        case statsAll = "統計"
         
         var id: String { self.rawValue }
     }
@@ -83,6 +84,9 @@ class MyPageViewModel {
         
         do {
             switch selectedFunction {
+            case .statsAll:
+                loans = []
+                viewState = .content
             case .profile:
                 // 個人檔案資料直接從 authManager 讀取，loans 設為空
                 loans = []
