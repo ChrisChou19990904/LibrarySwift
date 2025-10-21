@@ -6,9 +6,53 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D127AA672E9E23DA009C7D8F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D127AA662E9E23DA009C7D8F /* WidgetKit.framework */; };
+		D127AA692E9E23DA009C7D8F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D127AA682E9E23DA009C7D8F /* SwiftUI.framework */; };
+		D127AA7A2E9E23DB009C7D8F /* JinLibraryExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D127AA642E9E23DA009C7D8F /* JinLibraryExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D127AA782E9E23DB009C7D8F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ACB5DEAC2E59961800462616 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D127AA632E9E23DA009C7D8F;
+			remoteInfo = JinLibraryExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D127AA7F2E9E23DB009C7D8F /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D127AA7A2E9E23DB009C7D8F /* JinLibraryExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		ACB5DEB42E59961800462616 /* LibrarySwift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LibrarySwift.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D127AA642E9E23DA009C7D8F /* JinLibraryExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = JinLibraryExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D127AA662E9E23DA009C7D8F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		D127AA682E9E23DA009C7D8F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		D127AA802E9E23EC009C7D8F /* JinLibraryExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = JinLibraryExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D127AA7B2E9E23DB009C7D8F /* Exceptions for "JinLibrary" folder in "JinLibraryExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D127AA632E9E23DA009C7D8F /* JinLibraryExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		ACB5DEB62E59961800462616 /* LibrarySwift */ = {
@@ -31,6 +75,14 @@
 			path = Shared;
 			sourceTree = "<group>";
 		};
+		D127AA6A2E9E23DA009C7D8F /* JinLibrary */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D127AA7B2E9E23DB009C7D8F /* Exceptions for "JinLibrary" folder in "JinLibraryExtension" target */,
+			);
+			path = JinLibrary;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,16 +93,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D127AA612E9E23DA009C7D8F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D127AA692E9E23DA009C7D8F /* SwiftUI.framework in Frameworks */,
+				D127AA672E9E23DA009C7D8F /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		ACB5DEAB2E59961800462616 = {
 			isa = PBXGroup;
 			children = (
+				D127AA802E9E23EC009C7D8F /* JinLibraryExtension.entitlements */,
 				ACB5DEC92E599CF300462616 /* Shared */,
 				ACB5DEC82E599CE700462616 /* Features */,
 				ACB5DEC72E599CD000462616 /* Core */,
 				ACB5DEB62E59961800462616 /* LibrarySwift */,
+				D127AA6A2E9E23DA009C7D8F /* JinLibrary */,
+				D127AA652E9E23DA009C7D8F /* Frameworks */,
 				ACB5DEB52E59961800462616 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -59,8 +123,18 @@
 			isa = PBXGroup;
 			children = (
 				ACB5DEB42E59961800462616 /* LibrarySwift.app */,
+				D127AA642E9E23DA009C7D8F /* JinLibraryExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		D127AA652E9E23DA009C7D8F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D127AA662E9E23DA009C7D8F /* WidgetKit.framework */,
+				D127AA682E9E23DA009C7D8F /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -73,10 +147,12 @@
 				ACB5DEB02E59961800462616 /* Sources */,
 				ACB5DEB12E59961800462616 /* Frameworks */,
 				ACB5DEB22E59961800462616 /* Resources */,
+				D127AA7F2E9E23DB009C7D8F /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				D127AA792E9E23DB009C7D8F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				ACB5DEB62E59961800462616 /* LibrarySwift */,
@@ -91,6 +167,28 @@
 			productReference = ACB5DEB42E59961800462616 /* LibrarySwift.app */;
 			productType = "com.apple.product-type.application";
 		};
+		D127AA632E9E23DA009C7D8F /* JinLibraryExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D127AA7C2E9E23DB009C7D8F /* Build configuration list for PBXNativeTarget "JinLibraryExtension" */;
+			buildPhases = (
+				D127AA602E9E23DA009C7D8F /* Sources */,
+				D127AA612E9E23DA009C7D8F /* Frameworks */,
+				D127AA622E9E23DA009C7D8F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D127AA6A2E9E23DA009C7D8F /* JinLibrary */,
+			);
+			name = JinLibraryExtension;
+			packageProductDependencies = (
+			);
+			productName = JinLibraryExtension;
+			productReference = D127AA642E9E23DA009C7D8F /* JinLibraryExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -98,11 +196,14 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1620;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
 					ACB5DEB32E59961800462616 = {
 						CreatedOnToolsVersion = 16.2;
+					};
+					D127AA632E9E23DA009C7D8F = {
+						CreatedOnToolsVersion = 26.0.1;
 					};
 				};
 			};
@@ -121,12 +222,20 @@
 			projectRoot = "";
 			targets = (
 				ACB5DEB32E59961800462616 /* LibrarySwift */,
+				D127AA632E9E23DA009C7D8F /* JinLibraryExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		ACB5DEB22E59961800462616 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D127AA622E9E23DA009C7D8F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -143,7 +252,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D127AA602E9E23DA009C7D8F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D127AA792E9E23DB009C7D8F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D127AA632E9E23DA009C7D8F /* JinLibraryExtension */;
+			targetProxy = D127AA782E9E23DB009C7D8F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		ACB5DEC22E59961900462616 /* Debug */ = {
@@ -270,9 +394,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = LibrarySwift/LibrarySwift.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"LibrarySwift/Preview Content\"";
+				DEVELOPMENT_TEAM = 77GUV2264S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -298,9 +424,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = LibrarySwift/LibrarySwift.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"LibrarySwift/Preview Content\"";
+				DEVELOPMENT_TEAM = 77GUV2264S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -316,6 +444,70 @@
 				PRODUCT_BUNDLE_IDENTIFIER = jin888.LibrarySwift;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D127AA7D2E9E23DB009C7D8F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = JinLibraryExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 77GUV2264S;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = JinLibrary/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = JinLibrary;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = jin888.LibrarySwift.JinLibrary;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D127AA7E2E9E23DB009C7D8F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = JinLibraryExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 77GUV2264S;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = JinLibrary/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = JinLibrary;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = jin888.LibrarySwift.JinLibrary;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -338,6 +530,15 @@
 			buildConfigurations = (
 				ACB5DEC52E59961900462616 /* Debug */,
 				ACB5DEC62E59961900462616 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D127AA7C2E9E23DB009C7D8F /* Build configuration list for PBXNativeTarget "JinLibraryExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D127AA7D2E9E23DB009C7D8F /* Debug */,
+				D127AA7E2E9E23DB009C7D8F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
