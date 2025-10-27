@@ -10,6 +10,7 @@
 		D127AA672E9E23DA009C7D8F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D127AA662E9E23DA009C7D8F /* WidgetKit.framework */; };
 		D127AA692E9E23DA009C7D8F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D127AA682E9E23DA009C7D8F /* SwiftUI.framework */; };
 		D127AA7A2E9E23DB009C7D8F /* JinLibraryExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D127AA642E9E23DA009C7D8F /* JinLibraryExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D12B78072EAF6CD5001AEAA6 /* testbranch.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12B78062EAF6CC8001AEAA6 /* testbranch.swift */; };
 		D1F829512EA742C200242BB6 /* Charts.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D1F829502EA742C200242BB6 /* Charts.framework */; };
 /* End PBXBuildFile section */
 
@@ -43,6 +44,7 @@
 		D127AA662E9E23DA009C7D8F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		D127AA682E9E23DA009C7D8F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		D127AA802E9E23EC009C7D8F /* JinLibraryExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = JinLibraryExtension.entitlements; sourceTree = "<group>"; };
+		D12B78062EAF6CC8001AEAA6 /* testbranch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = testbranch.swift; sourceTree = "<group>"; };
 		D1F829502EA742C200242BB6 /* Charts.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Charts.framework; path = System/Library/Frameworks/Charts.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -111,6 +113,7 @@
 		ACB5DEAB2E59961800462616 = {
 			isa = PBXGroup;
 			children = (
+				D12B78062EAF6CC8001AEAA6 /* testbranch.swift */,
 				D127AA802E9E23EC009C7D8F /* JinLibraryExtension.entitlements */,
 				ACB5DEC92E599CF300462616 /* Shared */,
 				ACB5DEC82E599CE700462616 /* Features */,
@@ -253,6 +256,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D12B78072EAF6CD5001AEAA6 /* testbranch.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
